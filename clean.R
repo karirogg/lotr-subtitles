@@ -39,8 +39,9 @@ lyricsdat = data.frame(songname=c(), nword=c(), word=c(), stringsAsFactors = F)
 
 for(i in 1:length(songs)) {
     rawlyr = readChar(songs[i], file.info(songs[i])$size)
-    subbedlyr = gsub("\\[|\\]", " ", rawlyr) %>% gsub("\\.|\\,|\\?|\\!|\\n|\\:|\\-|\\d", "", .) %>% tolower()
-    splitlyr = unlist(strsplit(subbedlyr, split=" "))
+    subbedlyr = rawlyr %>% sub("\\[[0-9][0-9]:[0-9][0-9].[0-9][0-9]\\]","á",.) %>% gsub("\\[|\\]", " ", .) %>% gsub("\\.|\\,|\\?|\\!|\\n|\\:|\\-|\\d", "", .) %>% tolower()
+    templyr = unlist(strsplit(subbedlyr, split="á"))
+    splitlyr = unlist(strsplit(templyr[2], split=" "))
     splitlyr = splitlyr[splitlyr != ""]
     lyricsdat = rbind(lyricsdat, data.frame(songname=songs[i], nword=1:length(splitlyr), word=splitlyr, stringsAsFactors = F))
 }
