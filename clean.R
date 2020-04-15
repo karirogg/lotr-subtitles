@@ -1,66 +1,52 @@
 fotrtemp = readChar("fotr.srt", file.info("fotr.srt")$size)
-fotr = unlist(strsplit(fotrtemp, split="\n"))
+fotr = tibble(raw=unlist(strsplit(fotrtemp, split="\n")))
 
 ttttemp = readChar("ttt.srt", file.info("ttt.srt")$size)
-ttt = unlist(strsplit(ttttemp, split="\n"))
+ttt = tibble(raw=unlist(strsplit(ttttemp, split="\n")))
 
 rotktemp = readChar("rotk.srt", file.info("rotk.srt")$size)
-rotk = unlist(strsplit(rotktemp, split="\n"))
+rotk = tibble(raw=unlist(strsplit(rotktemp, split="\n")))
 
-dat = data.frame(startTime=c(), endTime=c(), text=c(), stringsAsFactors = F)
+movies = bind_rows(fotr,ttt,rotk, .id="source")
+
+dat = data.frame(movie=c(), startTime=c(), endTime=c(), text=c(), stringsAsFactors = F)
 
 currentString = ""
 currentTime = ""
 k=0
-for(item in fotr) {
-    if(grepl("-->", item)) {
+
+for(i in 1:nrow(movies)) {
+    if(grepl("-->", movies$raw[i])) {
         if(currentString != "") {
-            currentString=gsub(pattern = "\\d|<i>|</i>","", currentString)
-            currentTime=gsub(pattern = "\r","", currentTime)
+            currentString=trimws(tolower(gsub(pattern = '\\d|<i>|</i>|\\.|:|,|\\r|\\?|\\!|\\-|"',"", currentString)))
+            currentTime=gsub(pattern = "\\r","", currentTime)
             splitTime = unlist(strsplit(currentTime, " "))
-            dat = rbind(dat, data.frame(movie="fotr", startTime=splitTime[1], endTime=splitTime[3], text=currentString))
+            dat = rbind(dat, data.frame(movie=movies$source[i], startTime=splitTime[1], endTime=splitTime[3], text=currentString, stringsAsFactors = F))
             currentString = ""
         } 
-        currentTime = item
+        currentTime = movies$raw[i]
         k = k+1
-        
+            
     } else {
-        currentString = paste(currentString, item, sep=" ")
+        currentString = paste(currentString, movies$raw[i], sep=" ")
     }
 }
 
-for(item in ttt) {
-    if(grepl("-->", item)) {
-        if(currentString != "") {
-            currentString=gsub(pattern = "\\d|<i>|</i>","", currentString)
-            currentTime=gsub(pattern = "\r","", currentTime)
-            splitTime = unlist(strsplit(currentTime, " "))
-            dat = rbind(dat, data.frame(movie="ttt", startTime=splitTime[1], endTime=splitTime[3], text=currentString))
-            currentString = ""
-        } 
-        currentTime = item
-        k = k+1
-        
-    } else {
-        currentString = paste(currentString, item, sep=" ")
+dat = dat %>% separate_rows(., text, sep=" ")
+
+songs = c("survive.lrc", "winnertakes.lrc", "Bohemian.lrc", "doesmother.lrc", "Wonderwall.lrc")
+lyricsdat = data.frame(songname=c(), nword=c(), word=c(), stringsAsFactors = F)
+
+for(i in 1:length(songs)) {
+    rawlyr = readChar(songs[i], file.info(songs[i])$size)
+    subbedlyr = gsub("\\[|\\]", " ", rawlyr) %>% gsub("\\.|\\,|\\?|\\!|\\n|\\:|\\-|\\d", "", .) %>% trimws()
+    splitlyr = unlist(strsplit(subbedlyr, split=" "))
+    splitlyr = splitlyr[splitlyr != ""]
+    splitlyr = tolower(splitlyr)
+    for(j in 1:length(splitlyr)) {
+        lyricsdat = rbind(lyricsdat, data.frame(songname=songs[i], nword=j, word=splitlyr[j], stringsAsFactors = F))
     }
 }
 
-for(item in rotk) {
-    if(grepl("-->", item)) {
-        if(currentString != "") {
-            currentString=gsub(pattern = "\\d|<i>|</i>","", currentString)
-            currentTime=gsub(pattern = "\r","", currentTime)
-            splitTime = unlist(strsplit(currentTime, " "))
-            dat = rbind(dat, data.frame(movie="rotk", startTime=splitTime[1], endTime=splitTime[3], text=currentString))
-            currentString = ""
-        } 
-        currentTime = item
-        k = k+1
-        
-    } else {
-        currentString = paste(currentString, item, sep=" ")
-    }
-}
-
-dat = as.data.frame(lapply(dat,as.character))
+total = left_join(lyricsdat, dat, by=c("word"="text"))
+group_by(total, songname, word) %>% summarize(word)
