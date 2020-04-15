@@ -1,34 +1,27 @@
-fotrtemp = readChar("fotr.srt", file.info("fotr.srt")$size)
-fotr = tibble(raw=unlist(strsplit(fotrtemp, split="\n")))
-
-ttttemp = readChar("ttt.srt", file.info("ttt.srt")$size)
-ttt = tibble(raw=unlist(strsplit(ttttemp, split="\n")))
-
-rotktemp = readChar("rotk.srt", file.info("rotk.srt")$size)
-rotk = tibble(raw=unlist(strsplit(rotktemp, split="\n")))
-
-movies = bind_rows(fotr,ttt,rotk, .id="source")
-
+movies=c("fotr.srt", "ttt.srt", "rotk.srt")
 dat = data.frame(movie=c(), startTime=c(), endTime=c(), text=c(), stringsAsFactors = F)
 
-currentString = ""
-currentTime = ""
-k=0
-
-for(i in 1:nrow(movies)) {
-    if(grepl("-->", movies$raw[i])) {
-        if(currentString != "") {
-            currentString=trimws(tolower(gsub(pattern = '\\d|<i>|</i>|\\.|:|,|\\r|\\?|\\!|\\-|"',"", currentString)))
-            currentTime=gsub(pattern = "\\r","", currentTime)
-            splitTime = unlist(strsplit(currentTime, " "))
-            dat = rbind(dat, data.frame(movie=movies$source[i], startTime=splitTime[1], endTime=splitTime[3], text=currentString, stringsAsFactors = F))
-            currentString = ""
-        } 
-        currentTime = movies$raw[i]
-        k = k+1
+for(movie in movies) {
+    currentString = ""
+    currentTime = ""
+    k=0
+    temp = readChar(movie, file.info(movie)$size)
+    subtitles = unlist(strsplit(temp, split="\n"))
+    for(subtitle in subtitles) {
+        if(grepl("-->", subtitle)) {
+            if(currentString != "") {
+                currentString=trimws(tolower(gsub(pattern = '\\d|<i>|</i>|\\.|:|,|\\r|\\?|\\!|\\-|"',"", currentString)))
+                currentTime=gsub(pattern = "\\r","", currentTime)
+                splitTime = unlist(strsplit(currentTime, " "))
+                dat = rbind(dat, data.frame(movie=movie, startTime=splitTime[1], endTime=splitTime[3], text=currentString, stringsAsFactors = F))
+                currentString = ""
+            } 
+            currentTime = subtitle
+            k = k+1
             
-    } else {
-        currentString = paste(currentString, movies$raw[i], sep=" ")
+        } else {
+            currentString = paste(currentString, subtitle, sep=" ")
+        }
     }
 }
 
@@ -37,14 +30,15 @@ dat = dat %>% separate_rows(., text, sep=" ")
 songs = c("survive.lrc", "winnertakes.lrc", "Bohemian.lrc", "doesmother.lrc", "Wonderwall.lrc")
 lyricsdat = data.frame(songname=c(), nword=c(), word=c(), stringsAsFactors = F)
 
-for(i in 1:length(songs)) {
-    rawlyr = readChar(songs[i], file.info(songs[i])$size)
+for (song in songs) {
+    rawlyr = readChar(song, file.info(song)$size)
     subbedlyr = rawlyr %>% sub("\\[[0-9][0-9]:[0-9][0-9].[0-9][0-9]\\]","á",.) %>% gsub("\\[|\\]", " ", .) %>% gsub("\\.|\\,|\\?|\\!|\\n|\\:|\\-|\\d", "", .) %>% tolower()
     templyr = unlist(strsplit(subbedlyr, split="á"))
     splitlyr = unlist(strsplit(templyr[2], split=" "))
     splitlyr = splitlyr[splitlyr != ""]
-    lyricsdat = rbind(lyricsdat, data.frame(songname=songs[i], nword=1:length(splitlyr), word=splitlyr, stringsAsFactors = F))
+    lyricsdat = rbind(lyricsdat, data.frame(songname=song, nword=1:length(splitlyr), word=splitlyr, stringsAsFactors = F))
 }
 
-total = left_join(lyricsdat, dat, by=c("word"="text"))
-group_by(total, songname, word) %>% summarize(word)
+total3 = left_join(lyricsdat, dat, by=c("word"="text"))
+
+#group_by(total, songname, word) %>% summarize(word)
