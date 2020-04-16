@@ -85,7 +85,7 @@ shartmixdat =  bind_rows(
   (filter(dat, grepl("crumble", text)) %>% slice(1) %>% rename(word = text) %>% mutate(nword = 127)),
   (filter(dat, text == "because") %>% slice(1) %>% rename(word = text) %>% mutate(nword = 127)))
 
-survive_final_dat = bind_rows(survive_unique_matches, shartmixdat) %>% arrange(nword) %>% filter(!is.na(startTime), nword <= 10)
+survive_final_dat = bind_rows(survive_unique_matches, shartmixdat) %>% arrange(nword) %>% filter(!is.na(startTime), nword <= 176)
 
 write.table(survive_final_dat,"survive_frames.tsv", sep="\t", row.names=F, quote = F)
 
