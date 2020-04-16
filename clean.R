@@ -48,7 +48,7 @@ matches = inner_join(uniquematch, uniquematchrandom, by=c("songname", "nword", "
 
 group_by(uniquematch, songname) %>% summarize(sum(!is.na(movie))/n())
 
-
+write.table(matches, file="matches.tsv", sep="\t", row.names = F, quote = F)
 
 filter(dat, grepl("pet", text))
 filter(dat, text == "ring")
