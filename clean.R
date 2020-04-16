@@ -51,13 +51,6 @@ while(any(tmp_dat$text2!="")){
                checkTime=c(startTime[2:nrow(.)],""))%>%
         filter(checkTime==startTime)
 }
-
-pairs <- bind_cols(dat,text2=c(dat$text[2:nrow(dat)],NA),checkStartTime=c(dat$startTime[2:nrow(dat)],NA)) %>%
-    filter(startTime==checkStartTime) %>%
-    mutate(text=paste(text,text2)) 
-
-%>%
-    select(movie,startTime,endTime,text)
     
 songs = c("survive.lrc", "winnertakes.lrc", "Bohemian.lrc", "doesmother.lrc", "Wonderwall.lrc")
 lyricsdat = data.frame(songname=c(), nword=c(), word=c(), stringsAsFactors = F)
