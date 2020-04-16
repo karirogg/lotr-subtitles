@@ -1,4 +1,6 @@
 library(tidyverse)
+library(dplyr)
+library(tidyr)
 
 #movies=c("fotr2.srt", "ttt2.srt", "rotk2.srt")
 movies=c("ttt2.srt")
@@ -46,8 +48,8 @@ while(any(tmp_dat$text2!="")){
     
     tmp_dat <- tmp_dat %>%
         mutate(text2=c(text2[2:nrow(.)],""),
-               checkTime=c(startTime[2:nrow(.)],""))%>%
-        filter(checkTime==startTime)
+               checkTime=c(startFrame[2:nrow(.)],""))%>%
+        filter(checkTime==startFrame)
 }
     
 songs = c("survive.lrc", "winnertakes.lrc", "Bohemian.lrc", "doesmother.lrc", "Wonderwall.lrc")
@@ -82,7 +84,9 @@ shartmixdat =  bind_rows(
   (filter(dat, grepl("o'clock", text)) %>% slice(1) %>% rename(word = text) %>% mutate(nword = 72)),
   (filter(dat, grepl("brother", text)) %>% slice(1) %>% rename(word = text) %>% mutate(nword = 93)),
   (filter(dat, grepl("crumble", text)) %>% slice(1) %>% rename(word = text) %>% mutate(nword = 127)),
-  (filter(dat, text == "because") %>% slice(1)))
+  (filter(dat, text == "because") %>% slice(1) %>% rename(word = text) %>% mutate(nword = 127)))
+
+survive_final_dat = bind_rows(survive_unique_matches, shartmixdat) %>% arrange(nword) %>% filter(!is.na(startFrame))
 
 frameVec = c()
 
