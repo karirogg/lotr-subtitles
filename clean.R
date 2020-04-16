@@ -1,3 +1,5 @@
+library(tidyverse)
+
 #movies=c("fotr2.srt", "ttt2.srt", "rotk2.srt")
 movies=c("ttt2.srt")
 dat = data.frame(movie=c(), startTime=c(), endTime=c(), text=c(), stringsAsFactors = F)
@@ -26,8 +28,37 @@ for(movie in movies) {
     }
 }
 
-dat = dat %>% separate_rows(., text, sep=" ")
 
+dat = dat %>% 
+    separate_rows(., text, sep=" ") %>%
+    mutate(nwords=1)
+
+tmp_dat <- dat %>%
+    mutate(text2=c(text[2:nrow(.)],""),
+           checkTime=c(startTime[2:nrow(.)],""))%>%
+    filter(checkTime==startTime)
+
+while(any(tmp_dat$text2!="")){
+    tmp_dat <- tmp_dat %>%
+        mutate(text=paste(text,text2,sep=" "),
+               nwords=max(dat$nwords)+1)
+        
+    
+    dat <- bind_rows(dat,select(tmp_dat,movie,startTime,endTime,text,nwords))
+    
+    tmp_dat <- tmp_dat %>%
+        mutate(text2=c(text2[2:nrow(.)],""),
+               checkTime=c(startTime[2:nrow(.)],""))%>%
+        filter(checkTime==startTime)
+}
+
+pairs <- bind_cols(dat,text2=c(dat$text[2:nrow(dat)],NA),checkStartTime=c(dat$startTime[2:nrow(dat)],NA)) %>%
+    filter(startTime==checkStartTime) %>%
+    mutate(text=paste(text,text2)) 
+
+%>%
+    select(movie,startTime,endTime,text)
+    
 songs = c("survive.lrc", "winnertakes.lrc", "Bohemian.lrc", "doesmother.lrc", "Wonderwall.lrc")
 lyricsdat = data.frame(songname=c(), nword=c(), word=c(), stringsAsFactors = F)
 
