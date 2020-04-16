@@ -1,4 +1,5 @@
-movies=c("fotr.srt", "ttt.srt", "rotk.srt")
+#movies=c("fotr2.srt", "ttt2.srt", "rotk2.srt")
+movies=c("ttt2.srt")
 dat = data.frame(movie=c(), startTime=c(), endTime=c(), text=c(), stringsAsFactors = F)
 
 for(movie in movies) {
@@ -10,7 +11,7 @@ for(movie in movies) {
     for(subtitle in subtitles) {
         if(grepl("-->", subtitle)) {
             if(currentString != "") {
-                currentString=trimws(tolower(gsub(pattern = '\\d|<i>|</i>|\\.|:|,|\\r|\\?|\\!|\\-|"',"", currentString)))
+                currentString=trimws(tolower(gsub(pattern = '\\d|<i>|</i>|\\.|:|,|\\r|\\?|\\!|\\-|"|\\(|\\)',"", currentString)))
                 currentTime=gsub(pattern = "\\r","", currentTime)
                 splitTime = unlist(strsplit(currentTime, " "))
                 dat = rbind(dat, data.frame(movie=movie, startTime=splitTime[1], endTime=splitTime[3], text=currentString, stringsAsFactors = F))
@@ -32,13 +33,32 @@ lyricsdat = data.frame(songname=c(), nword=c(), word=c(), stringsAsFactors = F)
 
 for (song in songs) {
     rawlyr = readChar(song, file.info(song)$size)
-    subbedlyr = rawlyr %>% sub("\\[[0-9][0-9]:[0-9][0-9].[0-9][0-9]\\]","á",.) %>% gsub("\\[|\\]", " ", .) %>% gsub("\\.|\\,|\\?|\\!|\\n|\\:|\\-|\\d", "", .) %>% tolower()
+    subbedlyr = rawlyr %>% sub("\\[[0-9][0-9]:[0-9][0-9].[0-9][0-9]\\]","á",.) %>% gsub("\\[|\\]", " ", .) %>% gsub("\\.|\\,|\\?|\\!|\\n|\\:|\\-|\\d|\\(|\\)", "", .) %>% tolower()
     templyr = unlist(strsplit(subbedlyr, split="á"))
     splitlyr = unlist(strsplit(templyr[2], split=" "))
     splitlyr = splitlyr[splitlyr != ""]
     lyricsdat = rbind(lyricsdat, data.frame(songname=song, nword=1:length(splitlyr), word=splitlyr, stringsAsFactors = F))
 }
 
-total3 = left_join(lyricsdat, dat, by=c("word"="text"))
+totaldat = left_join(lyricsdat, dat, by=c("word"="text"))
 
-#group_by(total, songname, word) %>% summarize(word)
+uniquematch = group_by(totaldat, songname, nword, word) %>% summarize(movie = movie[1], startTime=startTime[1], endTime=endTime[1]) %>% ungroup()
+uniquematchrandom = group_by(totaldat, songname, nword, word) %>% sample_n(size = 1) %>% ungroup()
+matches = inner_join(uniquematch, uniquematchrandom, by=c("songname", "nword", "word"), suffix=c("","_random"))
+
+group_by(uniquematch, songname) %>% summarize(sum(!is.na(movie))/n())
+
+
+
+filter(dat, grepl("pet", text))
+filter(dat, text == "ring")
+filter(dat, grepl("ied", text))
+filter(dat, grepl("pace", text))
+filter(dat, grepl("o'clock", text))
+filter(dat, grepl("brother", text))
+filter(dat, grepl("crumble", text)) 
+filter(dat, text == "because") %>% slice(1)
+
+group_by(dat, text) %>% summarize(count = n()) %>% arrange(desc(count)) %>% View
+
+needed = filter(uniquematch, songname == "survive.lrc", is.na(movie), nword <= 176) %>% distinct(word) %>% unlist() %>% unname()
