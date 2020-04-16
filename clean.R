@@ -4,7 +4,7 @@ library(tidyr)
 
 #movies=c("fotr2.srt", "ttt2.srt", "rotk2.srt")
 movies=c("ttt2.srt")
-dat = data.frame(movie=c(), startFrame=c(), endFrame=c(), text=c(), stringsAsFactors = F)
+dat = data.frame(movie=c(), startTime=c(), endTime=c(), text=c(), stringsAsFactors = F)
 
 for(movie in movies) {
     currentString = ""
@@ -17,9 +17,8 @@ for(movie in movies) {
             if(currentString != "" && currentTime != "") {
                 currentString=trimws(tolower(gsub(pattern = '\\d|<i>|</i>|\\.|:|,|\\r|\\?|\\!|\\-|"|\\(|\\)',"", currentString)))
                 currentTime=gsub(pattern = "\\r","", currentTime)
-                splitTime = unlist(strsplit(currentTime, " "))[c(1,3)] %>% hms(.) %>% period_to_seconds()
-                splitFrames = c(floor(splitTime[1]*24),ceiling(splitTime[2]*24))
-                dat = rbind(dat, data.frame(movie=movie, startFrame=splitFrames[1], endFrame=splitFrames[2], text=currentString, stringsAsFactors = F))
+                splitTime = unlist(strsplit(currentTime, " "))[c(1,3)] %>% hms() %>% period_to_seconds()
+                dat = rbind(dat, data.frame(movie=movie, startTime=splitTime[1], endTime=splitTime[2], text=currentString, stringsAsFactors = F))
                 currentString = ""
             } 
             currentTime = subtitle
@@ -35,8 +34,8 @@ dat = dat %>% separate_rows(., text, sep=" ") %>% mutate(nwords=1)
 
 tmp_dat <- dat %>%
     mutate(text2=c(text[2:nrow(.)],""),
-           checkTime=c(startFrame[2:nrow(.)],""))%>%
-    filter(checkTime==startFrame)
+           checkTime=c(startTime[2:nrow(.)],""))%>%
+    filter(checkTime==startTime)
 
 while(any(tmp_dat$text2!="")){
     tmp_dat <- tmp_dat %>%
@@ -44,15 +43,15 @@ while(any(tmp_dat$text2!="")){
                nwords=max(dat$nwords)+1)
         
     
-    dat <- bind_rows(dat,select(tmp_dat,movie,startFrame,endFrame,text,nwords))
+    dat <- bind_rows(dat,select(tmp_dat,movie,startTime,endTime,text,nwords))
     
     tmp_dat <- tmp_dat %>%
         mutate(text2=c(text2[2:nrow(.)],""),
-               checkTime=c(startFrame[2:nrow(.)],""))%>%
-        filter(checkTime==startFrame)
+               checkTime=c(startTime[2:nrow(.)],""))%>%
+        filter(checkTime==startTime)
 }
     
-songs = c("survive.lrc", "winnertakes.lrc", "Bohemian.lrc", "doesmother.lrc", "Wonderwall.lrc")
+songs = c("survive.lrc", "winnertakes.lrc", "Bohemian.lrc", "doesmother.lrc", "Wonderwall.lrc", "loseyourself.lrc")
 lyricsdat = data.frame(songname=c(), nword=c(), word=c(), stringsAsFactors = F)
 
 for (song in songs) {
@@ -66,7 +65,7 @@ for (song in songs) {
 
 totaldat = left_join(lyricsdat, dat, by=c("word"="text"))
 
-uniquematch = group_by(totaldat, songname, nword, word) %>% summarize(movie = movie[1], startFrame=startFrame[1], endFrame=endFrame[1]) %>% ungroup()
+uniquematch = group_by(totaldat, songname, nword, word) %>% summarize(movie = movie[1], startTime=startTime[1], endTime=endTime[1]) %>% ungroup()
 uniquematchrandom = group_by(totaldat, songname, nword, word) %>% sample_n(size = 1) %>% ungroup()
 matches = inner_join(uniquematch, uniquematchrandom, by=c("songname", "nword", "word"), suffix=c("","_random"))
 
@@ -86,11 +85,11 @@ shartmixdat =  bind_rows(
   (filter(dat, grepl("crumble", text)) %>% slice(1) %>% rename(word = text) %>% mutate(nword = 127)),
   (filter(dat, text == "because") %>% slice(1) %>% rename(word = text) %>% mutate(nword = 127)))
 
-survive_final_dat = bind_rows(survive_unique_matches, shartmixdat) %>% arrange(nword) %>% filter(!is.na(startFrame))
+survive_final_dat = bind_rows(survive_unique_matches, shartmixdat) %>% arrange(nword) %>% filter(!is.na(startTime), nword <= 10)
 
-frameVec = c()
+write.table(survive_final_dat,"survive_frames.tsv", sep="\t", row.names=F, quote = F)
 
-for(item in survive)
+write.table(frameVec, file="frames.tsv", sep="\t", col.names=F, row.names=F, quote = F)
 
 write.table(matches, file="matches.tsv", sep="\t", row.names = F, quote = F)
 
