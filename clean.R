@@ -13,8 +13,9 @@ for(movie in movies) {
             if(currentString != "") {
                 currentString=trimws(tolower(gsub(pattern = '\\d|<i>|</i>|\\.|:|,|\\r|\\?|\\!|\\-|"|\\(|\\)',"", currentString)))
                 currentTime=gsub(pattern = "\\r","", currentTime)
-                splitTime = unlist(strsplit(currentTime, " "))
-                dat = rbind(dat, data.frame(movie=movie, startTime=splitTime[1], endTime=splitTime[3], text=currentString, stringsAsFactors = F))
+                splitTime = unlist(strsplit(currentTime, " "))[c(1,3)] %>% hms(.) %>% period_to_seconds()
+                splitFrames = c(floor(splitTime[1]*24))
+                dat = rbind(dat, data.frame(movie=movie, startTime=splitTime[1], endTime=splitTime[2], text=currentString, stringsAsFactors = F))
                 currentString = ""
             } 
             currentTime = subtitle
@@ -47,6 +48,9 @@ uniquematchrandom = group_by(totaldat, songname, nword, word) %>% sample_n(size 
 matches = inner_join(uniquematch, uniquematchrandom, by=c("songname", "nword", "word"), suffix=c("","_random"))
 
 group_by(uniquematch, songname) %>% summarize(sum(!is.na(movie))/n())
+
+#meikar meiri sens að skila frames að mínu mati þar sem sekúndur passa ekki endilega við frame timestampinn
+
 
 write.table(matches, file="matches.tsv", sep="\t", row.names = F, quote = F)
 
