@@ -1,9 +1,10 @@
 library(tidyverse)
 library(dplyr)
 library(tidyr)
+library(lubridate)
 
 #movies=c("fotr2.srt", "ttt2.srt", "rotk2.srt")
-movies=c("ttt2.srt")
+movies=c("fotr_subtitles.srt","ttt_subtitles.srt", "rotk_subtitles.srt")
 dat = data.frame(movie=c(), startTime=c(), endTime=c(), text=c(), stringsAsFactors = F)
 
 for(movie in movies) {
@@ -18,7 +19,7 @@ for(movie in movies) {
                 currentString=trimws(tolower(gsub(pattern = '\\d|<i>|</i>|\\.|:|,|\\r|\\?|\\!|\\-|"|\\(|\\)',"", currentString)))
                 currentTime=gsub(pattern = "\\r","", currentTime)
                 splitTime = unlist(strsplit(currentTime, " "))[c(1,3)] %>% hms() %>% period_to_seconds()
-                dat = rbind(dat, data.frame(movie=movie, startTime=splitTime[1], endTime=splitTime[2], text=currentString, stringsAsFactors = F))
+                dat = rbind(dat, data.frame(movie=movie, startTime=floor(splitTime[1]), endTime=ceiling(splitTime[2]), text=currentString, stringsAsFactors = F))
                 currentString = ""
             } 
             currentTime = subtitle
@@ -85,7 +86,7 @@ shartmixdat =  bind_rows(
   (filter(dat, grepl("crumble", text)) %>% slice(1) %>% rename(word = text) %>% mutate(nword = 127)),
   (filter(dat, text == "because") %>% slice(1) %>% rename(word = text) %>% mutate(nword = 127)))
 
-survive_final_dat = bind_rows(survive_unique_matches, shartmixdat) %>% arrange(nword) %>% filter(!is.na(startTime), nword <= 176)
+survive_final_dat = bind_rows(survive_unique_matches, shartmixdat) %>% arrange(nword) %>% filter(!is.na(startTime), nword <= 10)
 
 write.table(survive_final_dat,"survive_frames.tsv", sep="\t", row.names=F, quote = F)
 
